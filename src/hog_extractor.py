@@ -43,7 +43,10 @@ class HOGExtractor:
                 hist = np.zeros(self.nbins)
                 for k in range(self.cell_size):
                     for l in range(self.cell_size):
-                        bin1 = int(cell_angle[k, l] / (np.pi / self.nbins))
+                        bin1 = (
+                            int(np.floor(cell_angle[k, l] / (np.pi / self.nbins)))
+                            % self.nbins
+                        )
                         bin2 = (bin1 + 1) % self.nbins
                         weight = (cell_angle[k, l] % (np.pi / self.nbins)) / (
                             np.pi / self.nbins
@@ -86,7 +89,8 @@ class HOGExtractor:
 
 if __name__ == "__main__":
     # Example usage
-    img = np.random.rand(32, 32)
+    img = np.zeros((32, 32))
+    img[8:24, 8:24] = 1
     hog = HOGExtractor()
     features = hog._extract_single_channel(img)
     print(features)
