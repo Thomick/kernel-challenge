@@ -32,6 +32,7 @@ print("Extracting features")
 extractor = FisherExtractor()
 extractor.fit(train_data)
 
+
 train_dataset = extractor.extract_from_dataset(train_data)
 val_dataset = extractor.extract_from_dataset(val_data)
 test_dataset = extractor.extract_from_dataset(test_data)
@@ -39,16 +40,16 @@ test_dataset = extractor.extract_from_dataset(test_data)
 print(train_dataset.shape, val_dataset.shape, test_dataset.shape)
 
 
-try_linear = False
-try_rbf = True
-C = 10
-sigma = 'scale'
+try_linear = True
+try_rbf = False
+C = 1
+sigma = np.sqrt(train_dataset.shape[1]*train_dataset.var()*2)
 
 if try_linear:
     print("Linear SVM")
     simple_kernel = Kernel('linear')
-    cl = OneVsRestClassifier(SVC(kernel='linear',C=C),verbose=True, n_jobs=10)
-    cl.fit(train_dataset, train_labels)
+    cl = MultiClassClassifier(num_classes=10, model=SVM(simple_kernel, lambd=C))
+    cl.fit(train_dataset[:], train_labels)
 
     y_val = cl.predict(val_dataset)
 
@@ -56,13 +57,17 @@ if try_linear:
 
 if try_rbf:
     print("RBF SVM")
-    simple_kernel = Kernel('rbf', sigma=3.4)
-    #svm = SVM(simple_kernel)
-    #cl = MultiClassClassifier(num_classes=10, model=svm)
-    print(train_dataset.shape)
-    cl = OneVsRestClassifier(SVC(kernel='rbf',C=C,gamma=sigma),verbose=True, n_jobs=10)
+    simple_kernel = Kernel('rbf', sigma=sigma)
+    svm = SVM(simple_kernel, lambd=C)
+    cl = MultiClassClassifier(num_classes=10, model=svm)
+    #cl = OneVsRestClassifier(SVC(kernel='rbf', C=C, gamma=sigma), n_jobs=12, verbose=True)
     cl.fit(train_dataset, train_labels)
 
     y_val = cl.predict(val_dataset)
 
     print("Validation accuracy:", np.mean(y_val == val_labels))
+
+    y_test = cl.predict(val_dataset)
+    # print(val_dataset[:100])
+    # print(y_test[:100])
+    # print(simple_kernel.matrix(train_dataset[:10], train_dataset[:10]))

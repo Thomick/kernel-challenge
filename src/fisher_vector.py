@@ -2,7 +2,6 @@ import numpy as np
 
 # Reference: Jorge Sanchez, Florent Perronnin, Thomas Mensink, Jakob Verbeek. Image Classification with the Fisher Vector: Theory and Practice. [https://inria.hal.science/hal-00779493v3/document]
 
-# TODO : Check if the code is correct
 
 
 def compute_fisher_vector(data, gmm):

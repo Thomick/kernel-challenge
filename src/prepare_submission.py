@@ -31,10 +31,10 @@ C = 1
 sigma = 'scale'
 save_predictions = True
 
-print("RBF SVM")
-cl = OneVsRestClassifier(SVC(kernel='rbf',C=C,gamma=sigma),verbose=True, n_jobs=10)
+print("Linear SVM")
+simple_kernel = Kernel('linear')
+cl = MultiClassClassifier(num_classes=10, model=SVM(simple_kernel, lambd=C))
 cl.fit(train_dataset, train_labels)
-
 y_test = cl.predict(test_dataset)
 print("Saving predictions")
 pd.DataFrame({'Id': np.arange(1, len(y_test)+1), 'Prediction': y_test}).to_csv('submission/Yte_pred.csv', index=False)
