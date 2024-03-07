@@ -1,5 +1,6 @@
 import numpy as np
 import cvxpy as cp
+from tqdm import tqdm
 
 class LogisticRegression():
   def __init__(self, kernel, lambd=1):
@@ -67,7 +68,7 @@ class MultiClassClassifier():
       self.alpha = []
 
       if self.method == 'one_versus_the_rest':
-        for i in range(self.num_classes):
+        for i in tqdm(range(self.num_classes)):
           new_y = np.where(y == i, np.ones_like(y), -np.ones_like(y))
           self.model.fit(x, new_y)
           self.alpha.append(self.model.alpha)
