@@ -8,6 +8,9 @@ from fisher_extractor import FisherExtractor
 
 from data_processing import load_data
 import pandas as pd
+from skimage.feature import hog, fisher_vector, learn_gmm
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
 
 data = load_data("data/Xtr.csv")
 labels = pd.read_csv('data/Ytr.csv')['Prediction'].to_numpy()
@@ -33,26 +36,33 @@ train_dataset = extractor.extract_from_dataset(train_data)
 val_dataset = extractor.extract_from_dataset(val_data)
 test_dataset = extractor.extract_from_dataset(test_data)
 
-print("Linear SVM")
-simple_kernel = Kernel('linear')
-svm = SVM(simple_kernel)
-cl = MultiClassClassifier(num_classes=10, model=svm)
-cl.fit(train_dataset[:1000], train_labels[:1000])
+print(train_dataset.shape, val_dataset.shape, test_dataset.shape)
 
-y_val = cl.predict(val_dataset)
-y_test = cl.predict(test_dataset)
 
-print("Validation accuracy:", np.mean(y_val == val_labels))
+try_linear = False
+try_rbf = True
+C = 10
+sigma = 'scale'
 
-print("RBF SVM")
-simple_kernel = Kernel('rbf', sigma=3.4)
-svm = SVM(simple_kernel)
-cl = MultiClassClassifier(num_classes=10, model=svm)
-print(train_dataset.shape)
-print(train_labels.shape)
-cl.fit(train_dataset, train_labels)
+if try_linear:
+    print("Linear SVM")
+    simple_kernel = Kernel('linear')
+    cl = OneVsRestClassifier(SVC(kernel='linear',C=C),verbose=True, n_jobs=10)
+    cl.fit(train_dataset, train_labels)
 
-y_val = cl.predict(val_dataset)
-y_test = cl.predict(test_dataset)
+    y_val = cl.predict(val_dataset)
 
-print("Validation accuracy:", np.mean(y_val == val_labels))
+    print("Validation accuracy:", np.mean(y_val == val_labels))
+
+if try_rbf:
+    print("RBF SVM")
+    simple_kernel = Kernel('rbf', sigma=3.4)
+    #svm = SVM(simple_kernel)
+    #cl = MultiClassClassifier(num_classes=10, model=svm)
+    print(train_dataset.shape)
+    cl = OneVsRestClassifier(SVC(kernel='rbf',C=C,gamma=sigma),verbose=True, n_jobs=10)
+    cl.fit(train_dataset, train_labels)
+
+    y_val = cl.predict(val_dataset)
+
+    print("Validation accuracy:", np.mean(y_val == val_labels))
