@@ -1,10 +1,14 @@
 import numpy as np
 
-from fisher_vector import FisherVector
-from hog_extractor import HOGExtractor
+from fisher_vector import compute_fisher_vector
 
-# TODO: Finish the implementation of the FisherExtractor class
-# TODO: Test the FisherExtractor class
+from fast_hog_extractor import HOGExtractor
+
+from skimage.feature import hog
+
+from sklearn.mixture import GaussianMixture
+from sklearn.decomposition import PCA
+
 
 
 class FisherExtractor:
@@ -12,15 +16,15 @@ class FisherExtractor:
     Extract Fisher Vectors from a dataset of images using the specified local feature extractor
 
     Arguments:
-    - n_component: the number of Gaussian components
+    - n_gaussian: the number of Gaussian components
     - cell_size: the size of the HOG cell
     - nbins: the number of bins in the HOG
     """
 
-    def __init__(self, n_component=128, cell_size=8, nbins=9):
+    def __init__(self, n_gaussian=128, cell_size=8, nbins=9):
         self.extractor = HOGExtractor(cell_size=cell_size, nbins=nbins)
-        self.fv = None
-        self.n_component = n_component
+        self.n_gaussian = n_gaussian
+        self.gmm = None
 
     def fit(self, dataset):
         """
@@ -29,15 +33,13 @@ class FisherExtractor:
         Arguments:
         - dataset: a 4D numpy array representing the dataset
         """
-        features = self.extractor.extract_from_dataset(dataset)
-        gmm = self.fit_gmm(features)
-        self.fv = FisherVector(
-            n_component=gmm.n_components,
-            dimension=gmm.means_.shape[1],
-            mixture_weight=gmm.weights_,
-            mus=gmm.means_,
-            sigmas=gmm.covariances_,
-        )
+        #local_features = self.extractor.extract_from_dataset(dataset)
+        local_features = np.array([hog(dataset[i], pixels_per_cell=(8, 8), cells_per_block=(1, 1),channel_axis=-1,orientations=9) for i in range(len(dataset))])
+        local_features = PCA(n_components=32).fit_transform(local_features)
+        # print(local_features.shape)
+        self.gmm = GaussianMixture(n_components=self.n_gaussian, covariance_type='diag')
+        self.gmm.fit(local_features)
+        
 
     def extract_from_dataset(self, dataset):
         """
@@ -49,23 +51,34 @@ class FisherExtractor:
         Returns:
         - features: a 2D numpy array containing the Fisher Vectors
         """
-        features = []
-        for img in dataset:
-            features.append(self.extract_from_image(img))
-        return np.array(features)
 
-    def extract_from_image(self, img):
-        """
-        Extract Fisher Vectors from an image
-
-        Arguments:
-        - img: a 3D numpy array representing the image
-
-        Returns:
-        - features: a 1D numpy array containing the Fisher Vectors
-        """
-        features = self.extractor.extract_from_image(img)
-        if self.fv is None:
+        #local_features = self.extractor.extract_from_dataset(dataset)
+        local_features = np.array([hog(dataset[i], pixels_per_cell=(8, 8), cells_per_block=(1, 1),channel_axis=-1,orientations=9) for i in range(len(dataset))])
+        local_features = PCA(n_components=32).fit_transform(local_features)
+        # print(local_features.shape)
+        if self.gmm is None:
             raise ValueError("The Fisher Vector extractor has not been fitted yet")
-        features = self.fv.compute_fisher_vector(features[np.newaxis, :])
-        return features
+        
+        final_features = []
+        for i in range(len(local_features)):
+            fv = compute_fisher_vector(local_features[i][None,:], self.gmm)
+            final_features.append(fv)
+        return np.array(final_features)
+
+
+
+if __name__ == "__main__":
+    # Generate random dataset
+    dataset = np.random.rand(200, 32, 32, 3)
+
+    # Create the FisherExtractor
+    extractor = FisherExtractor()
+
+    # Fit the FisherExtractor
+    extractor.fit(dataset)
+
+    # Extract Fisher Vectors from the dataset
+    features = extractor.extract_from_dataset(dataset)
+
+    # Print the shape of the features
+    print(features.shape)
