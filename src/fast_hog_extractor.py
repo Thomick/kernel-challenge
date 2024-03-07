@@ -55,9 +55,21 @@ class HOGExtractor:
                  # print(val, (bin1 == val).sum())
                   hist[:, :, val] = np.sum(cell_magnitude * (1 - weight) * (bin1 == val), 1)
                   hist[:, :, val] += np.sum(cell_magnitude * weight * (bin2 == val), 1)
-
                 features.append(hist)
         
+        print(len(features))
         features = np.concatenate(features, 2).reshape(len(dataset), -1)
-        return features
+        return features 
+    # TODO : Consider using only locally dominant channel and block normalization
 
+if __name__ == "__main__":
+    hog = HOGExtractor()
+    dataset = np.random.rand(100, 32, 32, 3)
+
+    features = hog.extract_from_dataset(dataset)
+    print(features.shape)
+
+    # Expected output: 
+    from skimage.feature import hog
+    features = hog(dataset[0], pixels_per_cell=(8, 8), cells_per_block=(1, 1),channel_axis=-1,orientations=9, feature_vector=False)
+    print(features.shape)
