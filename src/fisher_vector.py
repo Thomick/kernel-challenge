@@ -25,7 +25,7 @@ def compute_fisher_vector(data, gmm):
     x = posterior.T @ data/ n_samples
     x2 = posterior.T @ (np.power(data, 2)) / n_samples
     # Compute GMM gradients
-    d_pi = (S) - mixture_weight
+    d_pi = S.squeeze() - mixture_weight
     d_mu = x - S*means
     d_sigma = -x2 - S*np.power(means, 2) + S*covariances + 2*x*means
     # Normalize the gradients
@@ -35,7 +35,7 @@ def compute_fisher_vector(data, gmm):
     d_sigma /=  sqrt_pi[:, np.newaxis] * covariances * np.sqrt(2)
 
     # Concatenate the gradients
-    fv = np.concatenate((d_pi.reshape(1,-1), d_mu.reshape(1,-1), d_sigma.reshape(1,-1)), axis=1)
+    fv = np.hstack((d_pi.reshape(-1), d_mu.reshape(-1), d_sigma.reshape(-1)))
 
     return fv 
     # TODO: Check the improved version of the Fisher Vector (power normalization, L2 normalization)
@@ -48,3 +48,10 @@ if __name__ == "__main__":
     gmm.fit(data)
     fv = compute_fisher_vector(data[0][None,:], gmm)
     print(fv)
+
+    # Expected output:
+    from skimage.feature import fisher_vector
+    fv = fisher_vector(data[0][None,:], gmm)
+    print(fv)
+
+    print("Are the results equal?", np.allclose(fv, compute_fisher_vector(data[0][None,:], gmm), atol=1e-5))
