@@ -49,7 +49,7 @@ if try_linear:
     print("Linear SVM")
     simple_kernel = Kernel('linear')
     cl = MultiClassClassifier(num_classes=10, model=SVM(simple_kernel, lambd=C))
-    cl.fit(train_dataset[:], train_labels)
+    cl.fit(train_dataset[:], train_labels, n_jobs=5)
 
     y_val = cl.predict(val_dataset)
 
@@ -61,7 +61,7 @@ if try_rbf:
     svm = SVM(simple_kernel, lambd=C)
     cl = MultiClassClassifier(num_classes=10, model=svm)
     #cl = OneVsRestClassifier(SVC(kernel='rbf', C=C, gamma=sigma), n_jobs=12, verbose=True)
-    cl.fit(train_dataset, train_labels)
+    cl.fit(train_dataset, train_labels, n_jobs=5)
 
     y_val = cl.predict(val_dataset)
 

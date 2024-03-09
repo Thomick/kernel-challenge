@@ -1,6 +1,8 @@
 import numpy as np
 import cvxpy as cp
 from tqdm import tqdm
+from joblib import Parallel, delayed
+from utils import *
 
 class LogisticRegression():
   def __init__(self, kernel, lambd=1):
@@ -28,23 +30,24 @@ class SVM():
   def __init__(self, kernel, lambd=1):
       self.kernel = kernel
       self.lambd = lambd
+      self.K = None
       
   def fit(self, x, y):
-      # y \subset {-1, 1}
-      self.x = x
-      self.n = len(x)
-      K = self.kernel.matrix(x, x)
-      K = cp.psd_wrap(K)
+      n = len(x)
+      if self.K is None:
+        self.K = cp.psd_wrap(self.kernel.matrix(x, x))
       
-      alpha = cp.Variable(self.n)
-      prob = cp.Problem(cp.Minimize(cp.quad_form(alpha, K) - 2*y @ alpha),
-                        [np.diag(y) @ alpha <= np.ones(self.n) / (2*self.n*self.lambd),
-                        np.diag(y) @ alpha >= np.zeros(self.n)])
+      alpha = cp.Variable(n)
+      prob = cp.Problem(cp.Minimize(cp.quad_form(alpha, self.K) - 2*y @ alpha),
+                        [np.diag(y) @ alpha <= np.ones(n) / (2*n*self.lambd),
+                        np.diag(y) @ alpha >= np.zeros(n)])
       prob.solve()
-      self.alpha = alpha.value
-      
-  def predict(self, x):
-      return self.alpha @ self.kernel.matrix(self.x, x)
+      alpha = alpha.value
+      return alpha
+  
+  def compute_K(self, x):
+    self.K = cp.psd_wrap(self.kernel.matrix(x, x))
+
 
 
 class MultiClassClassifier():
@@ -59,20 +62,30 @@ class MultiClassClassifier():
       #  self.models = [model(**model_params) for i in range(num_classes)]
       #elif method == 'pairwise':
       #  self.models = [[model(**model_params) for j in range(i+1, num_classes)] for i in range(num_classes)]
-
       
-  def fit(self, x, y):
+  def fit(self, x, y, n_jobs=5):
       # y \subset {0, 1, ..., num_classes - 1}
-      self.x = x
+      self5x = x
       self.y = y
       self.alpha = []
+      self.model.compute_K(x)
+
+      def fit_one_model(i):
+        new_y = np.where(y == i, np.ones_like(y), -np.ones_like(y))
+        alpha = self.model.fit(x, new_y)
+        return alpha
 
       if self.method == 'one_versus_the_rest':
-        for i in tqdm(range(self.num_classes)):
-          new_y = np.where(y == i, np.ones_like(y), -np.ones_like(y))
-          self.model.fit(x, new_y)
-          self.alpha.append(self.model.alpha)
-
+        if n_jobs == 1:
+          for i in tqdm(range(self.num_classes)):
+            self.alpha.append(fit_one_model(i))
+        else:
+          with tqdm_joblib(tqdm(desc="Training One-vs-rest", total=10)) as progress_bar:
+            self.alpha = Parallel(n_jobs=n_jobs,backend="loky")(delayed(fit_one_model)(i) for i in range(self.num_classes))
+      else:
+        #directed acyclic graph
+        print('Not implemented')
+      """
       elif self.method == 'pairwise':
         for i in range(self.num_classes):
           self.alpha.append([])
@@ -80,11 +93,9 @@ class MultiClassClassifier():
           for j in range(i+1, self.num_classes):
             mask = np.logical_or(y == i, y == j)
             self.model.fit(x[mask], new_y[mask])
-            self.alpha[i].append(self.model.alpha)
+            self.alpha[i].append(self.model.alpha)"""
       
-      else:
-        #directed acyclic graph
-        print('Not implemented')
+
       
   def predict(self, x, return_scores=False):
       if self.method == 'one_versus_the_rest':
