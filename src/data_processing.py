@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 
 def load_data(data_path):
     # Load the data
@@ -19,3 +20,19 @@ if __name__ == '__main__':
         fig.add_subplot(rows, cols, i+1)
         plt.imshow(data[i])
     plt.show()
+
+def get_train_val(data_path, labels_path):
+    data = load_data(data_path)
+    labels = pd.read_csv(labels_path)['Prediction'].to_numpy()
+    np.random.seed(0)
+    val_idx = np.random.choice(np.arange(len(data)), len(data)//5, replace=False)
+    mask = np.ones(len(data), dtype=bool)
+    mask[val_idx] = 0
+
+    val_data = data[val_idx]
+    val_labels = labels[val_idx]
+
+    train_data = data[mask]
+    train_labels = labels[mask]
+
+    return train_data, train_labels, val_data, val_labels
