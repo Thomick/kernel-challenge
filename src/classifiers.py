@@ -65,7 +65,7 @@ class MultiClassClassifier():
       
   def fit(self, x, y, n_jobs=5):
       # y \subset {0, 1, ..., num_classes - 1}
-      self5x = x
+      self.x = x
       self.y = y
       self.alpha = []
       self.model.compute_K(x)

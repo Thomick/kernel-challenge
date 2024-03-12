@@ -36,7 +36,7 @@ class FisherExtractor:
         """
         #local_features = self.extractor.extract_from_dataset(dataset)
         local_features = self.extractor.extract_from_dataset(dataset)
-        print(local_features.shape)
+        #print(local_features.shape)
         local_features = self.pca.fit_transform(local_features)
         # print(local_features.shape)
         self.gmm = GaussianMixture(n_components=self.n_gaussian, covariance_type='diag')

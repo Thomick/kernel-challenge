@@ -57,7 +57,7 @@ class HOGExtractor:
                   hist[:, :, val] += np.sum(cell_magnitude * weight * (bin2 == val), 1)
                 features.append(hist)
         
-        print(len(features))
+        #print(len(features))
         features = np.concatenate(features, 2).reshape(len(dataset), -1)
         return features 
     # TODO : Consider using only locally dominant channel and block normalization
