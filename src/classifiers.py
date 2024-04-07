@@ -99,11 +99,10 @@ class MultiClassClassifier():
       
   def predict(self, x, return_scores=False):
       if self.method == 'one_versus_the_rest':
-        for i in range(self.num_classes):
-          scores = np.array(self.alpha) @ self.kernel.matrix(self.x, x)
-          if return_scores:
-            return scores
-          return np.argmax(scores, 0)
+        scores = np.array(self.alpha) @ self.kernel.matrix(self.x, x)
+        if return_scores:
+          return scores
+        return np.argmax(scores, 0)
 
       elif self.method == 'pairwise':
         wins_count = np.zeros((len(x), self.num_classes))
