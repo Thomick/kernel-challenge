@@ -3,7 +3,7 @@ import cvxpy as cp
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from utils import *
-
+import os
 
 class LogisticRegression:
     def __init__(self, kernel, lambd=1):
@@ -118,3 +118,11 @@ class MultiClassClassifier:
                     wins_count[:, j] += (score < 0)
 
             return np.argmax(wins_count, -1)
+        
+    def save(self, path):
+        name = self.method + '_' + self.kernel.name + '_alpha.npy'
+        path = os.path.join(path, name)
+        np.save(path, np.array(self.alpha))
+
+    def load(self, path):
+        self.alpha = np.load(path)

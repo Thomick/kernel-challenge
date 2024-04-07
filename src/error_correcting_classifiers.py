@@ -4,6 +4,7 @@ from scipy.spatial import distance
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from utils import *
+import os
 
 CLASS_NAMES = np.array(["plane", "car", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"])
 
@@ -57,6 +58,14 @@ class ErrorCorrectingClassifier:
         # print(np.sum(np.min(distance2codeword, 1) <= self.errors))
         res = np.where(np.min(distance2codeword, 1) <= self.errors, new_res, old_res)
         return res
+    
+    def save(self, path):
+        name = self.method + '_' + self.kernel.name + '_alpha.npy'
+        path = os.path.join(path, name)
+        np.save(path, np.array(self.alpha))
+
+    def load(self, path):
+        self.alpha = np.load(path)
 
 
 class HammingClassifier(ErrorCorrectingClassifier):
