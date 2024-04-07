@@ -81,8 +81,8 @@ if try_linear:
         print("Pairwise. Validation accuracy:", np.mean(y_val == val_labels))
 
     if train_hamming:
-        # class_order = np.random.permutation(np.arange(10))
-        cl = HammingClassifier(num_classes=10, model=model)
+        class_order = np.array([1, 5, 6, 3, 7, 2, 9, 4, 0, 8])
+        cl = HammingClassifier(num_classes=10, model=model, class_order=class_order)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
         print("Hamming. Validation accuracy:", np.mean(y_val == val_labels))
