@@ -87,7 +87,7 @@ class MultiClassClassifier:
 
         elif self.method == 'pairwise':
             kernel_matrix = self.model.K
-            for i in range(self.num_classes):
+            for i in tqdm(range(self.num_classes), desc="Training pairwise"):
                 self.alpha.append([])
                 new_y = np.where(y == i, np.ones_like(y), -np.ones_like(y))
                 for j in range(i + 1, self.num_classes):

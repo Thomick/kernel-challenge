@@ -44,9 +44,9 @@ test_dataset = extractor.extract_from_dataset(test_data)
 # np.save('../data/test_features.npy', test_dataset)
 # test_dataset = np.load('../data/test_features.npy')
 
-small_train_len = len(val_dataset)
-train_dataset = train_dataset[:small_train_len]
-train_labels = train_labels[:small_train_len]
+#small_train_len = len(val_dataset)
+#train_dataset = train_dataset[:small_train_len]
+#train_labels = train_labels[:small_train_len]
 
 print(train_dataset.shape, val_dataset.shape, test_dataset.shape)
 
@@ -65,6 +65,8 @@ C = 1
 n_jobs = 4
 sigma = np.sqrt(train_dataset.shape[1]*train_dataset.var()*2)
 
+y_val_votes = np.zeros((val_dataset.shape[0], 10))
+
 if try_linear:
     print("Linear SVM")
     simple_kernel = Kernel('linear')
@@ -75,6 +77,7 @@ if try_linear:
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         #cl.load('saved_models/one_versus_the_rest_linear_alpha.npy', train_dataset[:], train_labels)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("One vs the rest. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -83,6 +86,7 @@ if try_linear:
         cl = MultiClassClassifier(num_classes=10, model=model, method='pairwise')
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("Pairwise. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -94,6 +98,7 @@ if try_linear:
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         #cl.load('saved_models/hamming_linear_1_alpha.npy', train_dataset[:], train_labels)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("Hamming. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -105,6 +110,7 @@ if try_linear:
         cl = GolayClassifier(num_classes=10, model=model, class_order=class_order)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("Golay. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -113,6 +119,7 @@ if try_linear:
         cl = CustomClassifier(num_classes=10, model=model)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("Custom. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -121,6 +128,7 @@ if try_linear:
         cl = BestClassifier(num_classes=10, model=model)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
+        y_val_votes += np.eye(10)[y_val]
         print("Best. Validation accuracy:", np.mean(y_val == val_labels))
         if save:
             cl.save(save_path)
@@ -134,6 +142,7 @@ if try_rbf:
     cl.fit(train_dataset, train_labels, n_jobs=5)
 
     y_val = cl.predict(val_dataset)
+    y_val_votes += np.eye(10)[y_val]
 
     print("Validation accuracy:", np.mean(y_val == val_labels))
 
@@ -141,3 +150,5 @@ if try_rbf:
     # print(val_dataset[:100])
     # print(y_test[:100])
     # print(simple_kernel.matrix(train_dataset[:10], train_dataset[:10]))
+
+print("Ensemble. Validation accuracy:", np.mean(np.argmax(y_val_votes, axis=1) == val_labels))
