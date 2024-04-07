@@ -16,6 +16,7 @@ class ErrorCorrectingClassifier:
         self.model = model
         self.kernel = self.model.kernel
         self.errors = errors
+        self.method = 'generic'
 
     def set_groups(self, code, class_order):
         self.groups = [class_order[assignment] for assignment in code]
@@ -60,12 +61,14 @@ class ErrorCorrectingClassifier:
         return res
     
     def save(self, path):
-        name = self.method + '_' + self.kernel.name + '_alpha.npy'
+        name = self.method + '_' + self.kernel.name +'_'+ str(self.errors)+ '_alpha.npy'
         path = os.path.join(path, name)
-        np.save(path, np.array(self.alpha))
+        np.save(path, np.array(self.alpha, dtype=object), allow_pickle=True)
 
-    def load(self, path):
-        self.alpha = np.load(path)
+    def load(self, path, x, y):
+        self.alpha = np.load(path,allow_pickle=True)
+        self.x = x
+        self.y = y
 
 
 class HammingClassifier(ErrorCorrectingClassifier):
@@ -83,6 +86,7 @@ class HammingClassifier(ErrorCorrectingClassifier):
             class_order = np.array([7, 6, 2, 9, 5, 8, 4, 3, 0, 1])
 
         self.set_groups(code, class_order)
+        self.method = 'hamming'
 
 
 class GolayClassifier(ErrorCorrectingClassifier):
@@ -105,6 +109,7 @@ class GolayClassifier(ErrorCorrectingClassifier):
             class_order = np.array([7, 8, 1, 4, 5, 3, 2, 6, 0, 9])
 
         self.set_groups(code, class_order)
+        self.method = 'golay'
 
 
 class CustomClassifier(ErrorCorrectingClassifier):
@@ -120,6 +125,8 @@ class CustomClassifier(ErrorCorrectingClassifier):
         self.set_groups(code == 0, class_order)
         self.code = (code == 0)
         self.pairs = self.groups[self.num_classes + 1:]
+
+        self.method = 'custom'
 
     def fit(self, x, y, n_jobs=5):
         super().fit(x, y, n_jobs)
@@ -167,6 +174,7 @@ class BestClassifier(ErrorCorrectingClassifier):
                          [0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
                          [1, 1, 0, 1, 1, 1, 0, 1, 1, 1]])
         self.set_groups(code == 0, class_order)
+        self.method = 'best'
 
     def predict(self, x):
         scores = np.array(self.alpha) @ self.kernel.matrix(self.x, x)

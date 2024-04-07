@@ -13,10 +13,10 @@ import pandas as pd
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
 
-data = load_data("../data/Xtr.csv")
-labels = pd.read_csv('../data/Ytr.csv')['Prediction'].to_numpy()
+data = load_data("data/Xtr.csv")
+labels = pd.read_csv('data/Ytr.csv')['Prediction'].to_numpy()
 
-test_data = load_data("../data/Xte.csv")
+test_data = load_data("data/Xte.csv")
 
 np.random.seed(0)
 val_idx = np.random.choice(np.arange(len(labels)), len(labels)//5, replace=False)
@@ -44,19 +44,21 @@ test_dataset = extractor.extract_from_dataset(test_data)
 # np.save('../data/test_features.npy', test_dataset)
 # test_dataset = np.load('../data/test_features.npy')
 
-# small_train_len = len(val_dataset)
-# train_dataset = train_dataset[:small_train_len]
-# train_labels = train_labels[:small_train_len]
+small_train_len = len(val_dataset)
+train_dataset = train_dataset[:small_train_len]
+train_labels = train_labels[:small_train_len]
 
 print(train_dataset.shape, val_dataset.shape, test_dataset.shape)
 
 try_linear = True
 train_one_vs_rest = True
-train_pairwise = False
+train_pairwise = True
 train_hamming = True
 train_golay = True
 train_custom = True
 train_best = True
+save = True
+save_path = 'saved_models/'
 
 try_rbf = False
 C = 1
@@ -71,21 +73,31 @@ if try_linear:
     if train_one_vs_rest:
         cl = MultiClassClassifier(num_classes=10, model=model)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
+        #cl.load('saved_models/one_versus_the_rest_linear_alpha.npy', train_dataset[:], train_labels)
         y_val = cl.predict(val_dataset)
         print("One vs the rest. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
 
     if train_pairwise:
         cl = MultiClassClassifier(num_classes=10, model=model, method='pairwise')
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
         print("Pairwise. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
+
 
     if train_hamming:
         class_order = np.array([1, 5, 6, 3, 7, 2, 9, 4, 0, 8])
         cl = HammingClassifier(num_classes=10, model=model, class_order=class_order)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
+        #cl.load('saved_models/hamming_linear_1_alpha.npy', train_dataset[:], train_labels)
         y_val = cl.predict(val_dataset)
         print("Hamming. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
+
 
     if train_golay:
         # class_order = np.random.permutation(np.arange(10))
@@ -94,18 +106,24 @@ if try_linear:
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
         print("Golay. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
 
     if train_custom:
         cl = CustomClassifier(num_classes=10, model=model)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
         print("Custom. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
 
     if train_best:
         cl = BestClassifier(num_classes=10, model=model)
         cl.fit(train_dataset[:], train_labels, n_jobs=n_jobs)
         y_val = cl.predict(val_dataset)
         print("Best. Validation accuracy:", np.mean(y_val == val_labels))
+        if save:
+            cl.save(save_path)
 
 if try_rbf:
     print("RBF SVM")

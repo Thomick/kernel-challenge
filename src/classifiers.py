@@ -122,7 +122,9 @@ class MultiClassClassifier:
     def save(self, path):
         name = self.method + '_' + self.kernel.name + '_alpha.npy'
         path = os.path.join(path, name)
-        np.save(path, np.array(self.alpha))
+        np.save(path, np.array(self.alpha, dtype=object), allow_pickle=True)
 
-    def load(self, path):
-        self.alpha = np.load(path)
+    def load(self, path, x, y):
+        self.alpha = np.load(path,allow_pickle=True)
+        self.x = x
+        self.y = y
