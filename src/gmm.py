@@ -1,4 +1,4 @@
-
+import numpy as np
 class MyGaussianMixture:
     """
     Gaussian Mixture Model with diagonal covariance matrix
@@ -13,9 +13,9 @@ class MyGaussianMixture:
     def __init__(self, n_components, n_features):
         self.n_components = n_components
         self.n_features = n_features
-        self.mu = np.random.rand(n_components, n_features)
-        self.sigma = np.random.rand(n_components, n_features)
-        self.pi = np.ones(n_components) / n_components
+        self.means_ = np.random.rand(n_components, n_features)
+        self.covariances_ = np.random.rand(n_components, n_features)+0.1
+        self.weights_ = np.ones(n_components) / n_components
 
     def EM_step(self, X):
         """
@@ -30,18 +30,18 @@ class MyGaussianMixture:
         # E-step
         gamma = np.zeros((N, K))
         for k in range(K):
-            gamma[:, k] = self.pi[k] * self.compute_likelihood(
-                X, self.mu[k], self.sigma[k]
+            gamma[:, k] = self.weights_[k] * self.compute_likelihood(
+                X, self.means_[k], self.covariances_[k]
             )
         gamma /= gamma.sum(axis=1, keepdims=True)
 
         # M-step
         Nk = gamma.sum(axis=0)
-        self.pi = Nk / N
+        self.weights_ = Nk / N
         # Update the means
-        self.mu = (gamma.T @ X) / Nk[:, np.newaxis]
+        self.means_ = (gamma.T @ X) / Nk[:, np.newaxis]
         # Update the variances
-        self.sigma = (gamma.T @ (X ** 2)) / Nk[:, np.newaxis] - self.mu ** 2
+        self.covariances_ = (gamma.T @ (X ** 2)) / Nk[:, np.newaxis] - self.means_ ** 2
 
     def compute_likelihood(self, X, mu, sigma):
         """
@@ -58,6 +58,24 @@ class MyGaussianMixture:
         return np.exp(-0.5 * ((X - mu) ** 2 / sigma).sum(axis=1)) / np.sqrt(
             (2 * np.pi * sigma).prod()
         )
+    
+    def predict_proba(self, X):
+        """
+        Compute the probability of each sample in X to belong to each component
+
+        Arguments:
+        - X: 2D numpy array (n_samples x n_features)
+
+        Returns:
+        - proba: 2D numpy array (n_samples x n_components)
+        """
+        proba = np.zeros((X.shape[0], self.n_components))
+        for k in range(self.n_components):
+            proba[:, k] = self.weights_[k] * self.compute_likelihood(
+                X, self.means_[k], self.covariances_[k]
+            )
+        proba /= proba.sum(axis=1, keepdims=True)
+        return proba
 
     def fit(self, X, n_iter=100):
         """

@@ -4,11 +4,14 @@ from fisher_vector import compute_fisher_vector
 
 from fast_hog_extractor import HOGExtractor
 
-from skimage.feature import hog
+from sift_extractor import SIFTExtractor
+
+from skimage.feature import SIFT
 
 from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 
+from gmm import MyGaussianMixture
 
 
 class FisherExtractor:
@@ -21,11 +24,14 @@ class FisherExtractor:
     - nbins: the number of bins in the HOG
     """
 
-    def __init__(self, n_gaussian=16, cell_size=8, nbins=9):
-        self.extractor = HOGExtractor(cell_size=cell_size, nbins=nbins)
+    def __init__(self, n_gaussian=10, cell_size=8, nbins=9, pca_dim=64, use_sift=False):
+        if use_sift:
+            self.extractor = SIFTExtractor()
+        else:
+            self.extractor = HOGExtractor(cell_size=cell_size, nbins=nbins)
         self.n_gaussian = n_gaussian
         self.gmm = None
-        self.pca = PCA(n_components=32)
+        self.pca = PCA(n_components=pca_dim)
 
     def fit(self, dataset):
         """
@@ -35,11 +41,12 @@ class FisherExtractor:
         - dataset: a 4D numpy array representing the dataset
         """
         #local_features = self.extractor.extract_from_dataset(dataset)
+        
         local_features = self.extractor.extract_from_dataset(dataset)
         #print(local_features.shape)
         local_features = self.pca.fit_transform(local_features)
         # print(local_features.shape)
-        self.gmm = GaussianMixture(n_components=self.n_gaussian, covariance_type='diag')
+        self.gmm = MyGaussianMixture(n_components=self.n_gaussian, n_features=local_features.shape[1])
         self.gmm.fit(local_features)
         
 
