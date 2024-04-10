@@ -4,7 +4,6 @@ from scipy.spatial import distance
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from utils import *
-import os
 
 CLASS_NAMES = np.array(["plane", "car", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"])
 
@@ -16,7 +15,6 @@ class ErrorCorrectingClassifier:
         self.model = model
         self.kernel = self.model.kernel
         self.errors = errors
-        self.method = 'generic'
 
     def set_groups(self, code, class_order):
         self.groups = [class_order[assignment] for assignment in code]
@@ -48,27 +46,20 @@ class ErrorCorrectingClassifier:
                 self.alpha = Parallel(n_jobs=n_jobs, backend="loky")(
                     delayed(fit_one_model)(group) for group in self.groups)
 
-    def predict(self, x):
+    def predict(self, x, return_scores=True):
         scores = np.array(self.alpha) @ self.kernel.matrix(self.x, x)
+        if return_scores:
+            return scores
+
         old_res = np.argmax(scores[:self.num_classes], 0)
 
         codes = (scores.T > 0) * 1.
         distance2codeword = distance.cdist(codes, self.code_words, metric='hamming') * self.code_words.shape[1]
         new_res = np.argmin(distance2codeword, 1)
 
-        # print(np.sum(np.min(distance2codeword, 1) <= self.errors))
+        print(np.sum(np.min(distance2codeword, 1) <= self.errors))
         res = np.where(np.min(distance2codeword, 1) <= self.errors, new_res, old_res)
         return res
-    
-    def save(self, path):
-        name = self.method + '_' + self.kernel.name +'_'+ str(self.errors)+ '_alpha.npy'
-        path = os.path.join(path, name)
-        np.save(path, np.array(self.alpha, dtype=object), allow_pickle=True)
-
-    def load(self, path, x, y):
-        self.alpha = np.load(path,allow_pickle=True)
-        self.x = x
-        self.y = y
 
 
 class HammingClassifier(ErrorCorrectingClassifier):
@@ -83,10 +74,10 @@ class HammingClassifier(ErrorCorrectingClassifier):
             drop_cols = [1]
         code = np.delete(hamming_code == 0, drop_cols, axis=1)
         if class_order is None:
-            class_order = np.array([7, 6, 2, 9, 5, 8, 4, 3, 0, 1])
+            # class_order = np.array([7, 6, 2, 9, 5, 8, 4, 3, 0, 1])
+            class_order = np.array([1, 5, 6, 3, 7, 2, 9, 4, 0, 8])
 
         self.set_groups(code, class_order)
-        self.method = 'hamming'
 
 
 class GolayClassifier(ErrorCorrectingClassifier):
@@ -109,7 +100,6 @@ class GolayClassifier(ErrorCorrectingClassifier):
             class_order = np.array([7, 8, 1, 4, 5, 3, 2, 6, 0, 9])
 
         self.set_groups(code, class_order)
-        self.method = 'golay'
 
 
 class CustomClassifier(ErrorCorrectingClassifier):
@@ -125,8 +115,6 @@ class CustomClassifier(ErrorCorrectingClassifier):
         self.set_groups(code == 0, class_order)
         self.code = (code == 0)
         self.pairs = self.groups[self.num_classes + 1:]
-
-        self.method = 'custom'
 
     def fit(self, x, y, n_jobs=5):
         super().fit(x, y, n_jobs)
@@ -174,9 +162,8 @@ class BestClassifier(ErrorCorrectingClassifier):
                          [0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
                          [1, 1, 0, 1, 1, 1, 0, 1, 1, 1]])
         self.set_groups(code == 0, class_order)
-        self.method = 'best'
 
-    def predict(self, x):
+    def predict(self, x, return_scores=False):
         scores = np.array(self.alpha) @ self.kernel.matrix(self.x, x)
         old_scores = scores[:self.num_classes]
 
@@ -186,5 +173,7 @@ class BestClassifier(ErrorCorrectingClassifier):
 
         old_scores[[0, 1, 8, 9]] += scores[self.num_classes]
         old_scores[[2, 3, 4, 5, 6, 7]] -= scores[self.num_classes]
+        if return_scores:
+            return old_scores[:self.num_classes]
 
         return np.argmax(old_scores[:self.num_classes], 0)
