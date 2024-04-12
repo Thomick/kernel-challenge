@@ -3,26 +3,17 @@ from classifiers import SVM, MultiClassClassifier
 from kernel import Kernel
 from fisher_extractor import FisherExtractor
 from error_correcting_classifiers import BestClassifier
-
 from data_processing import load_data
 import pandas as pd
-
 from sift_extractor import SIFTExtractor
 
 train_data = load_data("../data/Xtr.csv")
 train_labels = pd.read_csv('../data/Ytr.csv')['Prediction'].to_numpy()
-
 test_data = load_data("../data/Xte.csv")
-
-np.random.seed(0)
-val_idx = np.random.choice(np.arange(len(train_labels)), len(train_labels)//10, replace=False)
-mask = np.ones(len(train_labels), dtype=bool)
-mask[val_idx] = 0
-
 
 print("Extracting features")
 extractor = FisherExtractor()
-extractor.fit(train_data[mask])
+extractor.fit(train_data)
 
 train_dataset = extractor.extract_from_dataset(train_data)
 test_dataset = extractor.extract_from_dataset(test_data)
@@ -51,8 +42,6 @@ if train_pairwise:
     y_test = np.argmax(test_counts, -1)
     y_train = np.argmax(train_counts, -1)
     print("Train accuracy:", np.mean(y_train == train_labels))
-    np.save('../data/pair_test', test_counts)
-    np.save('../data/pair_train', train_counts)
     np.save('../data/pair_y', y_test)
 
 if train_sift:
@@ -81,8 +70,6 @@ if train_sift:
     y_train = np.argmax(train_scores, 0)
 
     print("Train accuracy:", np.mean(y_train == train_labels))
-    np.save('../data/sift_test', y_scores)
-    np.save('../data/sift_train', train_scores)
     np.save('../data/sift_y', y_test)
 
 if train_hof:
@@ -111,15 +98,12 @@ if train_hof:
     y_train = np.argmax(train_scores, 0)
 
     print("Train accuracy:", np.mean(y_train == train_labels))
-    np.save('../data/hof_test', y_scores)
-    np.save('../data/hof_train', train_scores)
     np.save('../data/hof_y', y_test)
 
-
-hof_y = np.load('../data/hof_y.npy') # pd.read_csv('Yte_pred(3).csv')['Prediction'].to_numpy()
+hof_y = np.load('../data/hof_y.npy')
 sift_y = np.load('../data/sift_y.npy')
 pair_y = np.load('../data/pair_y.npy')
 
 y_test = np.where(sift_y == pair_y, sift_y, hof_y)
 print("Saving predictions")
-pd.DataFrame({'Id': np.arange(1, len(y_test)+1), 'Prediction': y_test}).to_csv('Yte_pred.csv', index=False)
+pd.DataFrame({'Id': np.arange(1, len(y_test)+1), 'Prediction': y_test}).to_csv('Yte.csv', index=False)
