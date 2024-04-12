@@ -22,8 +22,9 @@ pip install -r requirements.txt
 
 Then you can run the code by executing the following command:
 ```bash
-python src/start.py
+cd src
+python start.py
 ```
-This code will produce a file `Yte_pred.csv` in the submission directory containing the predicted labels for the test set. You can specify whether you want to retrain the models by setting the corresponding flags directly in the code.
+This code will produce a file `Yte.csv` in the same directory as the `start.py` script directory containing the predicted labels for the test set. You can specify whether you want to retrain the models by setting the corresponding flags directly in the code.
 
 Note that the scripts ending with `_submission.py` were also used to generate the final submission files using the other models we tried.
