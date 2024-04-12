@@ -6,29 +6,34 @@ from error_correcting_classifiers import BestClassifier
 from data_processing import load_data
 import pandas as pd
 from sift_extractor import SIFTExtractor
+import argparse
 
-train_data = load_data("../data/Xtr.csv")
-train_labels = pd.read_csv('../data/Ytr.csv')['Prediction'].to_numpy()
-test_data = load_data("../data/Xte.csv")
+parser = argparse.ArgumentParser(description='Get predictions.')
+parser.add_argument('--train', action='store_true', default=False,
+                    help='set True for training, False for aggregating predictions.')
+parser.add_argument('--njobs', type=int, default=2)
 
-print("Extracting features")
-extractor = FisherExtractor(pca_dim=32, n_gaussian=16)
-extractor.fit(train_data)
+args = parser.parse_args()
 
-train_dataset = extractor.extract_from_dataset(train_data)
-test_dataset = extractor.extract_from_dataset(test_data)
+if args.train:
+    n_jobs = args.njobs
+    train_data = load_data("../data/Xtr.csv")
+    train_labels = pd.read_csv('../data/Ytr.csv')['Prediction'].to_numpy()
+    test_data = load_data("../data/Xte.csv")
 
-print("Extracting SIFT features")
-extractor = SIFTExtractor()
-train_dataset_sift = extractor.extract_from_dataset(train_data)
-test_dataset_sift = extractor.extract_from_dataset(test_data)
+    print("Extracting features")
+    extractor = FisherExtractor(pca_dim=32, n_gaussian=16)
+    extractor.fit(train_data)
 
-n_jobs = 2
-train_pairwise = False
-train_sift = False
-train_hof = False
+    train_dataset = extractor.extract_from_dataset(train_data)
+    test_dataset = extractor.extract_from_dataset(test_data)
 
-if train_pairwise:
+    print("Extracting SIFT features")
+    extractor = SIFTExtractor()
+    train_dataset_sift = extractor.extract_from_dataset(train_data)
+    test_dataset_sift = extractor.extract_from_dataset(test_data)
+
+
     print("Train pairwise classifier")
     model = SVM(Kernel('cosine'), 1.)
     cl = MultiClassClassifier(num_classes=10, model=model, method='pairwise')
@@ -44,7 +49,7 @@ if train_pairwise:
     print("Train accuracy:", np.mean(y_train == train_labels))
     np.save('../data/pair_y', y_test)
 
-if train_sift:
+
     print("Train classifier with SIFT features")
     y_scores = []
     train_scores = []
@@ -72,7 +77,7 @@ if train_sift:
     print("Train accuracy:", np.mean(y_train == train_labels))
     np.save('../data/sift_y', y_test)
 
-if train_hof:
+
     print("Train classifier with HOF features")
     y_scores = []
     train_scores = []
