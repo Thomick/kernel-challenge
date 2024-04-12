@@ -20,10 +20,15 @@ First install the required python libraries:
 pip install -r requirements.txt
 ```
 
-Then you can run the code by executing the following command:
+Then you can run the code by executing the following command to aggregate predictions of the pretrained models:
 ```bash
 cd src
 python start.py
+```
+or add a flag to train from scratch:
+```bash
+cd src
+python start.py --train
 ```
 This code will produce a file `Yte.csv` in the same directory as the `start.py` script directory containing the predicted labels for the test set. You can specify whether you want to retrain the models by setting the corresponding flags directly in the code.
 
