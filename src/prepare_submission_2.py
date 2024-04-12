@@ -12,7 +12,7 @@ train_labels = pd.read_csv('../data/Ytr.csv')['Prediction'].to_numpy()
 test_data = load_data("../data/Xte.csv")
 
 print("Extracting features")
-extractor = FisherExtractor()
+extractor = FisherExtractor(pca_dim=32, n_gaussian=16)
 extractor.fit(train_data)
 
 train_dataset = extractor.extract_from_dataset(train_data)

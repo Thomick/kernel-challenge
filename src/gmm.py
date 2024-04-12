@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class MyGaussianMixture:
     """
     Gaussian Mixture Model with diagonal covariance matrix
@@ -14,7 +16,7 @@ class MyGaussianMixture:
         self.n_components = n_components
         self.n_features = n_features
         self.means_ = np.random.rand(n_components, n_features)
-        self.covariances_ = np.random.rand(n_components, n_features)+0.1
+        self.covariances_ = np.random.rand(n_components, n_features) + 0.1
         self.weights_ = np.ones(n_components) / n_components
 
     def EM_step(self, X):
@@ -58,7 +60,7 @@ class MyGaussianMixture:
         return np.exp(-0.5 * ((X - mu) ** 2 / sigma).sum(axis=1)) / np.sqrt(
             (2 * np.pi * sigma).prod()
         )
-    
+
     def predict_proba(self, X):
         """
         Compute the probability of each sample in X to belong to each component
